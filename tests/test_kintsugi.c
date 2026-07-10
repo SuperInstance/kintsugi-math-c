@@ -1,6 +1,7 @@
 #include "../src/kintsugi.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 #define ASSERT_FEQ(a, b) assert(fabs((a) - (b)) < 1e-6)
