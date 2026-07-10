@@ -175,12 +175,59 @@ GoldenJoint *find_golden_joints(const CrackGraph *cg, size_t *joint_count) {
 
 double measure_resilience(const CrackGraph *cg, const GoldenJoint *joints,
                          size_t joint_count) {
-    if (joint_count == 0) return 0.0;
-    
-    double total_beauty = 0;
-    for (size_t i = 0; i < joint_count; i++) {
-        total_beauty += joints[i].beauty;
+    if (!cg || cg->node_count <= 0 || joint_count == 0) return 0.0;
+
+    int n = cg->node_count;
+    double *damage = (double *)calloc(n, sizeof(double));
+    double *survival = (double *)malloc(n * sizeof(double));
+    if (!damage || !survival) {
+        free(damage);
+        free(survival);
+        return 0.0;
     }
-    
-    return total_beauty / (double)joint_count;
+
+    /* Accumulate crack damage at every node the crack touches. */
+    double max_damage = 0.0;
+    for (size_t i = 0; i < cg->crack_count; i++) {
+        int s = cg->cracks[i].source;
+        int t = cg->cracks[i].target;
+        double w = cg->cracks[i].weight;
+
+        if (s >= 0 && s < n) {
+            damage[s] += w;
+            if (damage[s] > max_damage) max_damage = damage[s];
+        }
+        if (t >= 0 && t < n) {
+            damage[t] += w;
+            if (damage[t] > max_damage) max_damage = damage[t];
+        }
+    }
+
+    /* Base survival: less damage means higher survival. */
+    for (int i = 0; i < n; i++) {
+        if (max_damage > 0.0) {
+            survival[i] = 1.0 - (damage[i] / max_damage);
+            if (survival[i] < 0.0) survival[i] = 0.0;
+        } else {
+            survival[i] = 1.0;
+        }
+    }
+
+    /* Apply golden-joint repairs at the nodes they cover. */
+    for (size_t i = 0; i < joint_count; i++) {
+        int node = joints[i].node;
+        if (node < 0 || node >= n) continue;
+
+        survival[node] += joints[i].beauty;
+        if (survival[node] > 1.0) survival[node] = 1.0;
+    }
+
+    double total_survival = 0.0;
+    for (int i = 0; i < n; i++) {
+        total_survival += survival[i];
+    }
+
+    free(damage);
+    free(survival);
+    return total_survival / (double)n;
 }

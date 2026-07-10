@@ -109,6 +109,50 @@ void test_crack_graph_empty() {
     printf("  PASS: crack_graph_empty\n");
 }
 
+void test_resilience_uses_graph_damage() {
+    /* Two nodes, both fully damaged by a single crack. */
+    CrackGraph cg = crack_graph_create(2);
+    crack_graph_add(&cg, 0, 1, 1.0);
+
+    GoldenJoint joints[] = {
+        {.node = 0, .impact = 1.0, .difficulty = 0.5, .beauty = 1.0}
+    };
+    double resilience = measure_resilience(&cg, joints, 1);
+    ASSERT_FEQ(resilience, 0.5);
+
+    crack_graph_destroy(&cg);
+    printf("  PASS: resilience_uses_graph_damage\n");
+}
+
+void test_resilience_repair_beauty_partial() {
+    /* Same damage as above, but a weaker repair only saves node 0 partially. */
+    CrackGraph cg = crack_graph_create(2);
+    crack_graph_add(&cg, 0, 1, 1.0);
+
+    GoldenJoint joints[] = {
+        {.node = 0, .impact = 1.0, .difficulty = 0.5, .beauty = 0.5}
+    };
+    double resilience = measure_resilience(&cg, joints, 1);
+    ASSERT_FEQ(resilience, 0.25);
+
+    crack_graph_destroy(&cg);
+    printf("  PASS: resilience_repair_beauty_partial\n");
+}
+
+void test_resilience_no_cracks_full_survival() {
+    /* With no cracks, every node survives; repairs only clamp to 1.0. */
+    CrackGraph cg = crack_graph_create(3);
+
+    GoldenJoint joints[] = {
+        {.node = 1, .impact = 0.5, .difficulty = 0.5, .beauty = 0.5}
+    };
+    double resilience = measure_resilience(&cg, joints, 1);
+    ASSERT_FEQ(resilience, 1.0);
+
+    crack_graph_destroy(&cg);
+    printf("  PASS: resilience_no_cracks_full_survival\n");
+}
+
 int main() {
     printf("Running kintsugi-math-c tests:\n");
     test_golden_repair();
@@ -119,6 +163,9 @@ int main() {
     test_fragment_overlap();
     test_crack_graph();
     test_crack_graph_empty();
-    printf("\n8 passed, 0 failed\n");
+    test_resilience_uses_graph_damage();
+    test_resilience_repair_beauty_partial();
+    test_resilience_no_cracks_full_survival();
+    printf("\n11 passed, 0 failed\n");
     return 0;
 }

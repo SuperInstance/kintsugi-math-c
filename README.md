@@ -70,7 +70,7 @@ int main(void) {
 - `CrackGraph *crack_graph_create()` — Create empty graph
 - `void crack_graph_destroy(CrackGraph *cg)`
 - `int crack_graph_add(CrackGraph *cg, int source, int target, double weight)` — Add failure edge
-- `double measure_resilience(const CrackGraph *cg, const GoldenJoint *joints, size_t n_joints)` — Compute resilience score
+- `double measure_resilience(const CrackGraph *cg, const GoldenJoint *joints, size_t n_joints)` — Compute graph-aware resilience score (average node survival after fault damage and repairs)
 
 ### Golden Joint
 ```c
@@ -89,7 +89,7 @@ typedef struct {
 
 ## How It Works
 
-Same algorithms as the Python/npm versions, implemented in pure C with manual memory management. Fragment reassembly uses confidence-weighted interpolation. Crack graphs are adjacency lists. Resilience measures the fraction of nodes surviving fault propagation.
+Same algorithms as the Python/npm versions, implemented in pure C with manual memory management. Fragment reassembly uses confidence-weighted interpolation. Crack graphs are adjacency lists. Resilience measures the average node survival after fault damage propagates through the graph and `GoldenJoint` repairs are applied: each crack contributes damage to its source and target nodes, base survival is derived from that damage, and a joint at a node increases that node's survival by its `beauty`, clamped to a maximum of 1.0.
 
 ## License
 
