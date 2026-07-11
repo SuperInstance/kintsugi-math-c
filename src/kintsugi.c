@@ -143,31 +143,57 @@ int crack_graph_add(CrackGraph *cg, int source, int target, double weight) {
 }
 
 GoldenJoint *find_golden_joints(const CrackGraph *cg, size_t *joint_count) {
+    if (joint_count) *joint_count = 0;
+    if (!cg || cg->node_count <= 0) return NULL;
+
+    int n = cg->node_count;
+
     /* Count connections per node */
-    double *impact = (double *)calloc(cg->node_count, sizeof(double));
-    int *connections = (int *)calloc(cg->node_count, sizeof(int));
-    
-    for (size_t i = 0; i < cg->crack_count; i++) {
-        impact[cg->cracks[i].source] += cg->cracks[i].weight;
-        impact[cg->cracks[i].target] += cg->cracks[i].weight;
-        connections[cg->cracks[i].source]++;
-        connections[cg->cracks[i].target]++;
+    double *impact = (double *)calloc((size_t)n, sizeof(double));
+    int *connections = (int *)calloc((size_t)n, sizeof(int));
+    if (!impact || !connections) {
+        free(impact);
+        free(connections);
+        return NULL;
     }
-    
+
+    /* Only count cracks whose endpoints fall inside the graph, mirroring the
+       bounds checking already done in measure_resilience. Out-of-range
+       endpoints are ignored rather than indexing past the arrays. */
+    for (size_t i = 0; i < cg->crack_count; i++) {
+        int s = cg->cracks[i].source;
+        int t = cg->cracks[i].target;
+        double w = cg->cracks[i].weight;
+
+        if (s >= 0 && s < n) {
+            impact[s] += w;
+            connections[s]++;
+        }
+        if (t >= 0 && t < n) {
+            impact[t] += w;
+            connections[t]++;
+        }
+    }
+
     /* Find top joints (high impact, high connectivity) */
     *joint_count = 0;
-    GoldenJoint *joints = (GoldenJoint *)malloc(cg->node_count * sizeof(GoldenJoint));
-    
-    for (int n = 0; n < cg->node_count; n++) {
-        if (connections[n] > 0) {
-            joints[*joint_count].node = n;
-            joints[*joint_count].impact = impact[n];
-            joints[*joint_count].difficulty = 1.0 / (1.0 + connections[n]);
-            joints[*joint_count].beauty = impact[n] * (1.0 / (1.0 + connections[n]));
+    GoldenJoint *joints = (GoldenJoint *)malloc((size_t)n * sizeof(GoldenJoint));
+    if (!joints) {
+        free(impact);
+        free(connections);
+        return NULL;
+    }
+
+    for (int node = 0; node < n; node++) {
+        if (connections[node] > 0) {
+            joints[*joint_count].node = node;
+            joints[*joint_count].impact = impact[node];
+            joints[*joint_count].difficulty = 1.0 / (1.0 + connections[node]);
+            joints[*joint_count].beauty = impact[node] * (1.0 / (1.0 + connections[node]));
             (*joint_count)++;
         }
     }
-    
+
     free(impact);
     free(connections);
     return joints;
