@@ -78,7 +78,7 @@ argument (see Quick Start for usage).
 - `void crack_graph_destroy(CrackGraph *cg)` — Free the crack list
 - `int crack_graph_add(CrackGraph *cg, int source, int target, double weight)` — Add a failure edge; returns `0` on success, `-1` on alloc failure
 - `GoldenJoint *find_golden_joints(const CrackGraph *cg, size_t *joint_count)` — Rank repair points by impact/connectivity; out-of-range endpoints are ignored. Returns `NULL` for empty/invalid graphs. Caller must `free()`.
-- `double measure_resilience(const CrackGraph *cg, const GoldenJoint *joints, size_t n_joints)` — Compute graph-aware resilience score (average node survival after fault damage and repairs); out-of-range endpoints are ignored
+- `double measure_resilience(const CrackGraph *cg, const GoldenJoint *joints, size_t joint_count)` — Compute graph-aware resilience score (average node survival after fault damage and repairs); out-of-range endpoints are ignored
 
 ### Golden Joint
 ```c
