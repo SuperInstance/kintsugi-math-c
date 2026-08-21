@@ -15,5 +15,11 @@ test_kintsugi: tests/test_kintsugi.c libkintsugi.a
 test: test_kintsugi
 	./test_kintsugi
 
+examples/quickstart: examples/quickstart.c libkintsugi.a
+	$(CC) $(CFLAGS) -o $@ $< -L. -lkintsugi -lm
+
+examples: examples/quickstart
+	./examples/quickstart
+
 clean:
-	rm -f src/*.o libkintsugi.a test_kintsugi
+	rm -f src/*.o libkintsugi.a test_kintsugi examples/quickstart

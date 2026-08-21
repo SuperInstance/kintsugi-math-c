@@ -1,12 +1,17 @@
 name: CI
+
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master, production-round3-2026-07-10]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "No CI configured — customize per project requirements"
+      - name: Build library and run tests
+        run: make && make test
+      - name: Build and run examples
+        run: make examples

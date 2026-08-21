@@ -1,1 +1,5 @@
-*.o\n*.a\ntest_kintsugi\n*.swp
+*.o
+*.a
+test_kintsugi
+examples/quickstart
+*.swp
