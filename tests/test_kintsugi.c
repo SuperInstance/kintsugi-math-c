@@ -109,6 +109,33 @@ void test_crack_graph_empty() {
     printf("  PASS: crack_graph_empty\n");
 }
 
+void test_find_golden_joints_ignores_out_of_range() {
+    /* A crack whose endpoint is outside [0, node_count) must not corrupt or
+       crash find_golden_joints; only in-range nodes are reported. This
+       mirrors the bounds checking measure_resilience already does. */
+    CrackGraph cg = crack_graph_create(2);
+    crack_graph_add(&cg, 0, 1, 0.8);   /* both endpoints in range */
+    crack_graph_add(&cg, 0, 5, 0.4);   /* target 5 is out of range */
+
+    size_t joint_count;
+    GoldenJoint *joints = find_golden_joints(&cg, &joint_count);
+
+    /* Only nodes 0 and 1 are valid; node 5 must be ignored. */
+    assert(joints != NULL);
+    assert(joint_count == 2);
+    int seen0 = 0, seen1 = 0, seen_oob = 0;
+    for (size_t i = 0; i < joint_count; i++) {
+        if (joints[i].node == 0) seen0 = 1;
+        else if (joints[i].node == 1) seen1 = 1;
+        else seen_oob = 1;
+    }
+    assert(seen0 && seen1 && !seen_oob);
+
+    free(joints);
+    crack_graph_destroy(&cg);
+    printf("  PASS: find_golden_joints_ignores_out_of_range\n");
+}
+
 void test_resilience_uses_graph_damage() {
     /* Two nodes, both fully damaged by a single crack. */
     CrackGraph cg = crack_graph_create(2);
@@ -163,9 +190,10 @@ int main() {
     test_fragment_overlap();
     test_crack_graph();
     test_crack_graph_empty();
+    test_find_golden_joints_ignores_out_of_range();
     test_resilience_uses_graph_damage();
     test_resilience_repair_beauty_partial();
     test_resilience_no_cracks_full_survival();
-    printf("\n11 passed, 0 failed\n");
+    printf("\n12 passed, 0 failed\n");
     return 0;
 }
